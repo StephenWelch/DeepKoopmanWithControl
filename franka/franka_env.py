@@ -1,6 +1,9 @@
+import time
+
 import pybullet as pb
 import pybullet_data
 import numpy as np
+import os
 
 class FrankaEnv(object):
 
@@ -25,19 +28,19 @@ class FrankaEnv(object):
         self.Nstates = 17
         self.udim = 7
         self.dt = self.frame_skip*ts
-        
+
     def get_ik(self, position, orientation=None):
         if orientation is None:
             jnts = pb.calculateInverseKinematics(self.robot, self.ee_id, position)[:7]
         else:
             jnts = pb.calculateInverseKinematics(self.robot, self.ee_id, position, orientation)[:7]
         return jnts
-        
+
     def get_state(self):
         jnt_st = pb.getJointStates(self.robot, range(7))
         ## 1,2,3 position 
         ## 4,5,6 are the link frame pose, orientation in quat and ve
-        ee_state = pb.getLinkState(self.robot, self.ee_id)[-2:] ### Why local and not the Cartesian ones? Ask Ian 
+        ee_state = pb.getLinkState(self.robot, self.ee_id)[-2:] ### Why local and not the Cartesian ones? Ask Ian
         jnt_ang = []
         jnt_vel = []
         for jnt in jnt_st:
@@ -66,3 +69,27 @@ class FrankaEnv(object):
             pb.stepSimulation()
 
         return self.get_state()
+
+if __name__ == '__main__':
+    dt = 0.002
+    env = FrankaEnv(render=True, ts=dt)
+    uval = 0.12
+
+    noise = (np.random.rand(7)-0.5)*2*0.2
+    joint_init = env.reset_joint_state+noise
+    joint_init = np.clip(joint_init,env.joint_low,env.joint_high)
+    s0 = env.reset_state(joint_init)
+    u10 = (np.random.rand(7)-0.5)*2*uval
+
+    steps = 0
+    while True:
+        # env.step(np.random.uniform(-env.sat_val, env.sat_val, 7))
+        # if steps % 100 == 0:
+        #     # u10 = (np.random.rand(7)-0.5)*2*uval
+        #     # u10 = np.random.uniform(-env.sat_val, env.sat_val, 7)
+        u10 = (np.random.rand(7)-0.5)*2*uval
+        env.step(u10)
+        # time.sleep(dt * env.frame_skip)
+        steps += 1
+
+
