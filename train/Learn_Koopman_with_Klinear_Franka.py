@@ -17,7 +17,7 @@ import pybullet as pb
 import pybullet_data
 from scipy.io import loadmat, savemat
 # Franka simulator
-from franka_env import FrankaEnv
+from franka.franka_env import FrankaEnv
 
 #data collect
 def Obs(o):
